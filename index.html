@@ -6,19 +6,19 @@
     <title>Deployment Command Center</title>
     <style>
         :root {
-            --sap-blue: #003366;
+            --sap-blue: #89cff0; /* Lighter blue for dark mode visibility */
             --sap-gold: #F0AB00;
-            --bg-color: #f4f6f8;
-            --card-bg: #ffffff;
-            --text-color: #333;
-            --ring-header-bg: #eef2f5;
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --ring-header-bg: #2d2d2d;
             --status-ok: #28a745;
             --status-maint: #dc3545; /* Red for maintenance */
         }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+            background: linear-gradient(135deg, #1a1a1a 0%, #2c3e50 100%);
             min-height: 100vh;
             color: var(--text-color);
             margin: 0;
@@ -45,39 +45,30 @@
 
         .header-title p {
             margin: 5px 0 0;
-            color: #666;
+            color: #aaa;
             font-size: 0.9rem;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        /* Dropdown Style */
+        #view-filter {
+            padding: 10px 15px;
+            border-radius: 5px;
+            border: 1px solid #444;
+            background-color: #333;
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
         }
 
         .logo-container img {
             height: 50px;
             /* If you don't have an image URL yet, this alt text shows */
-        }
-
-        /* Filter Controls */
-        .filter-container {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .filter-btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 20px;
-            background-color: #fff;
-            color: var(--sap-blue);
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            transition: all 0.2s;
-        }
-
-        .filter-btn:hover, .filter-btn.active {
-            background-color: var(--sap-blue);
-            color: white;
-            transform: translateY(-2px);
         }
 
         /* Main Grid Layout */
@@ -119,8 +110,8 @@
 
         /* DC Cards */
         .dc-card {
-            background: #fff;
-            border: 1px solid #e0e0e0;
+            background: var(--card-bg);
+            border: 1px solid #333;
             border-radius: 8px;
             padding: 15px;
             margin-bottom: 15px;
@@ -145,10 +136,11 @@
         .analog-clock {
             width: 50px;
             height: 50px;
-            border: 2px solid #ccc;
+            border: 2px solid #555;
             border-radius: 50%;
             position: relative;
-            background: #f9f9f9;
+            background: #222;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
             flex-shrink: 0;
         }
 
@@ -161,15 +153,15 @@
             z-index: 2;
         }
 
-        .hand.hour { width: 4px; height: 12px; background: var(--sap-blue); }
-        .hand.min { width: 2px; height: 18px; background: #666; }
+        .hand.hour { width: 4px; height: 12px; background: #fff; }
+        .hand.min { width: 2px; height: 18px; background: #bbb; }
         .hand.sec { width: 1px; height: 20px; background: var(--status-maint); z-index: 3; }
         
         .center-dot {
             position: absolute;
             top: 50%; left: 50%;
             width: 6px; height: 6px;
-            background: #333;
+            background: #fff;
             border-radius: 50%;
             transform: translate(-50%, -50%);
             z-index: 4;
@@ -184,12 +176,12 @@
             font-size: 1.4rem;
             font-weight: bold;
             font-variant-numeric: tabular-nums;
-            color: #444;
+            color: #fff;
         }
 
         .dc-date {
             font-size: 0.8rem;
-            color: #888;
+            color: #aaa;
         }
 
         /* Status Indicators */
@@ -235,17 +227,18 @@
             <h1>Deployment Status Dashboard</h1>
             <p>Live Global DC Timings & Maintenance Windows</p>
         </div>
-        <div class="logo-container">
-            <!-- Replace src with your actual hosted logo path if needed -->
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/SAP_2011_logo.svg/2560px-SAP_2011_logo.svg.png" alt="SAP Ariba Logo">
+        <div class="header-controls">
+            <select id="view-filter" onchange="filterSelection(this.value)">
+                <option value="all">Show All Rings</option>
+                <option value="ring-1">Ring 1 DC's</option>
+                <option value="ring-2">Ring 2 DC's</option>
+            </select>
+            <div class="logo-container">
+                <!-- Replace src with your actual hosted logo path if needed -->
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/SAP_2011_logo.svg/2560px-SAP_2011_logo.svg.png" alt="SAP Ariba Logo">
+            </div>
         </div>
     </header>
-
-    <div class="filter-container">
-        <button class="filter-btn active" onclick="filterSelection('all', this)">Show All</button>
-        <button class="filter-btn" onclick="filterSelection('ring-1', this)">Ring 1</button>
-        <button class="filter-btn" onclick="filterSelection('ring-2', this)">Ring 2</button>
-    </div>
 
     <div class="dashboard-container">
         
@@ -315,11 +308,7 @@
             }
         ];
 
-        function filterSelection(selection, btn) {
-            // Update buttons
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-
+        function filterSelection(selection) {
             const ring1 = document.getElementById('ring-1');
             const ring2 = document.getElementById('ring-2');
 

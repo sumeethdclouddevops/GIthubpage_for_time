@@ -284,8 +284,8 @@
     </header>
 
     <div class="summary-panel">
-        <div class="summary-badge" style="color: var(--status-ok);">Business-Hours: <span id="count-ops">0</span></div>
-        <div class="summary-badge" style="color: var(--status-maint);">Non-Business Hours: <span id="count-maint">0</span></div>
+        <div class="summary-badge" style="color: var(--status-ok);">Business-Hours: <span id="count-business-hours">0</span></div>
+        <div class="summary-badge" style="color: var(--status-maint);">Non-Business Hours: <span id="count-non-business">0</span></div>
     </div>
 
     <div class="dashboard-container">
@@ -441,8 +441,8 @@
 
         function updateDashboard() {
             const now = new Date();
-            let opsCount = 0;
-            let maintCount = 0;
+            let businessHoursCount = 0;
+            let nonBusinessCount = 0;
 
             dataCenters.forEach(dc => {
                 // 1. Get Time in Target Zone
@@ -482,7 +482,7 @@
                 const inMaint = isNon-Business Hours(dc, localHour);
                 
                 // Update Counters
-                if (inMaint) maintCount++; else opsCount++;
+                if (inMaint) nonBusinessCount++; else businessHoursCount++;
 
                 // Get Countdown
                 const countdownHtml = getCountdown(dc, inMaint);
@@ -538,8 +538,8 @@
             });
 
             // Update Summary
-            document.getElementById('count-ops').innerText = opsCount;
-            document.getElementById('count-maint').innerText = maintCount;
+            document.getElementById('count-business-hours').innerText = businessHoursCount;
+            document.getElementById('count-non-business').innerText = nonBusinessCount;
         }
 
         // Initial Run

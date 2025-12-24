@@ -11,7 +11,7 @@
             --bg-color: #121212;
             --card-bg: rgba(30, 30, 30, 0.7); /* Glassmorphism base */
             --text-color: #e0e0e0;
-            --ring-header-bg: #2d2d2d;
+            --ring-header-bg: #2d2d2d; 
             --status-ok: #28a745;
             --status-maint: #dc3545; /* Red for Non-Business Hours */
         }
@@ -57,6 +57,16 @@
             gap: 20px;
         }
 
+        /* Planner Controls */
+        .planner-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: rgba(0,0,0,0.2);
+            padding: 5px 15px;
+            border-radius: 8px;
+        }
+
         /* Dropdown Style */
         #view-filter {
             padding: 10px 15px;
@@ -66,6 +76,15 @@
             color: #fff;
             font-size: 1rem;
             cursor: pointer;
+        }
+
+        .planner-select, .planner-time {
+            padding: 8px 10px;
+            border-radius: 5px;
+            border: 1px solid #444;
+            background-color: #333;
+            color: #fff;
+            font-size: 0.9rem;
         }
 
         .logo-container img {
@@ -156,13 +175,13 @@
 
         /* Analog Clock Styles */
         .analog-clock {
-            width: 50px;
-            height: 50px;
-            border: 2px solid #666;
+            width: 60px;
+            height: 60px;
+            border: 2px solid rgba(255,255,255,0.1);
             border-radius: 50%;
             position: relative;
-            background: radial-gradient(circle, #333, #111);
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.4);
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
             flex-shrink: 0;
         }
 
@@ -175,8 +194,8 @@
             z-index: 2;
         }
 
-        .hand.hour { width: 4px; height: 14px; background: #fff; border-radius: 4px; }
-        .hand.min { width: 2px; height: 20px; background: #ddd; border-radius: 2px; }
+        .hand.hour { width: 3px; height: 16px; background: #fff; border-radius: 4px; }
+        .hand.min { width: 2px; height: 24px; background: var(--sap-blue); border-radius: 2px; }
         .hand.sec { width: 1px; height: 20px; background: var(--status-maint); z-index: 3; }
         
         .center-dot {
@@ -215,6 +234,11 @@
             color: #aaa;
         }
 
+        .dc-window {
+            font-size: 0.75rem;
+            color: #888;
+        }
+
         .countdown-container {
             margin-top: 5px;
             font-size: 0.85rem;
@@ -248,6 +272,16 @@
             animation: pulse 2s infinite;
         }
 
+        .recommendation-badge {
+            display: inline-block;
+            margin-top: 5px;
+            font-size: 0.7rem;
+            color: var(--sap-blue);
+            border: 1px solid var(--sap-blue);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
         @keyframes pulse {
             0% { opacity: 1; }
             50% { opacity: 0.7; }
@@ -271,6 +305,16 @@
             <p>Live Global DC Timings & Non-Business Hours Windows</p>
         </div>
         <div class="header-controls">
+            <div class="planner-controls">
+                <select id="product-select" class="planner-select" onchange="updateDashboard()">
+                    <option value="0">Select Product...</option>
+                    <option value="2.5">AN (2.5 hrs)</option>
+                    <option value="2">Buyer (2 hrs)</option>
+                    <option value="2">S4 (2 hrs)</option>
+                </select>
+                <input type="time" id="deploy-time" class="planner-time" onchange="updateDashboard()">
+            </div>
+
             <select id="view-filter" onchange="filterSelection(this.value)">
                 <option value="all">Show All Rings</option>
                 <option value="ring-1">Ring 1 DC's</option>
@@ -284,7 +328,7 @@
     </header>
 
     <div class="summary-panel">
-        <div class="summary-badge" style="color: var(--status-ok);">Business-Hours: <span id="count-business-hours">0</span></div>
+        <div class="summary-badge" style="color: var(--status-ok);">Business Hours: <span id="count-business-hours">0</span></div>
         <div class="summary-badge" style="color: var(--status-maint);">Non-Business Hours: <span id="count-non-business">0</span></div>
     </div>
 
@@ -380,7 +424,7 @@
             return istDate.getHours();
         }
 
-        function isNon-Business Hours(dc, localHour) {
+        function isNonBusinessHours(dc, localHour) {
             // If no Non-Business Hours window defined, assume Business-Hours
             if (dc.maintStart === undefined || dc.maintEnd === undefined) return false;
 
@@ -439,6 +483,69 @@
             return `<span class="countdown-label">${label}</span>${hh}:${mm}:${ss}`;
         }
 
+        function checkRecommendation(dc) {
+            const productDuration = parseFloat(document.getElementById('product-select').value);
+            const timeInput = document.getElementById('deploy-time').value;
+
+            if (!productDuration || !timeInput || dc.maintStart === undefined) return "";
+
+            // Parse selected time (User Local)
+            const [selH, selM] = timeInput.split(':').map(Number);
+            const now = new Date();
+            now.setHours(selH, selM, 0, 0);
+
+            // Convert selected time to DC time
+            // We create a formatter for the DC zone
+            const parts = new Intl.DateTimeFormat('en-US', {
+                timeZone: dc.checkType === 'IST_BASED' ? 'Asia/Kolkata' : dc.zone,
+                hour: 'numeric', minute: 'numeric', hour12: false
+            }).formatToParts(now);
+            
+            const dcH = parseInt(parts.find(p => p.type === 'hour').value);
+            const dcM = parseInt(parts.find(p => p.type === 'minute').value);
+            
+            const startDecimal = dcH + (dcM / 60);
+            const endDecimal = startDecimal + productDuration;
+
+            // Check if interval [startDecimal, endDecimal] is inside [maintStart, maintEnd]
+            // Handle wrap around midnight
+            const mStart = dc.maintStart;
+            const mEnd = dc.maintEnd;
+
+            let fits = false;
+            if (mStart > mEnd) { // e.g. 22 to 6
+                // Window is [22..24] U [0..6]
+                // It fits if (start >= 22 AND end <= 24 + 6) -- simplified logic for wrap
+                // Easier: Check if start is valid AND end is valid AND we didn't cross the forbidden zone (6 to 22)
+                // Let's use a helper: isTimeInWindow(t)
+                const sIn = (startDecimal >= mStart) || (startDecimal < mEnd);
+                
+                // For end time, if it goes past 24, we mod 24.
+                // But strictly, if start is 23:00 and duration is 2h, end is 1:00 (next day).
+                // 23:00 is in window. 1:00 is in window.
+                // Did we cross the gap? Gap is [mEnd, mStart] i.e. [6, 22].
+                // If duration is short (2.5h), we just need to ensure we don't start right before gap closes.
+                
+                // Simple check:
+                // If start is in window, how much time left until window closes?
+                let timeUntilClose;
+                if (startDecimal >= mStart) {
+                    timeUntilClose = (24 - startDecimal) + mEnd;
+                } else {
+                    timeUntilClose = mEnd - startDecimal;
+                }
+                
+                if (sIn && productDuration <= timeUntilClose) fits = true;
+
+            } else { // e.g. 7 to 16
+                const sIn = (startDecimal >= mStart && startDecimal < mEnd);
+                const timeUntilClose = mEnd - startDecimal;
+                if (sIn && productDuration <= timeUntilClose) fits = true;
+            }
+
+            return fits ? `<div class="recommendation-badge">✅ Recommended</div>` : "";
+        }
+
         function updateDashboard() {
             const now = new Date();
             let businessHoursCount = 0;
@@ -479,7 +586,7 @@
                 // We already have 'h' from above
                 const localHour = h;
                 
-                const inMaint = isNon-Business Hours(dc, localHour);
+                const inMaint = isNonBusinessHours(dc, localHour);
                 
                 // Update Counters
                 if (inMaint) nonBusinessCount++; else businessHoursCount++;
@@ -489,11 +596,22 @@
 
                 // 3. Build HTML
                 const statusClass = inMaint ? 'status-maint' : 'status-active';
-                const statusText = inMaint ? 'Non-Business Hours' : 'Business-Hours';
+                const statusText = inMaint ? 'Non-Business Hours' : 'Business Hours';
                 
                 // Special text for US to indicate it's based on IST
                 let subText = dateString;
                 if(dc.id === 'us' && inMaint) subText += " (IST Window)";
+
+                // Window Text
+                let windowText = "";
+                if (dc.maintStart !== undefined) {
+                    const s = String(dc.maintStart).padStart(2,'0') + ":00";
+                    const e = String(dc.maintEnd).padStart(2,'0') + ":00";
+                    windowText = `Non-Biz Window: ${s} - ${e}`;
+                }
+
+                // Recommendation
+                const recHtml = checkRecommendation(dc);
 
                 const html = `
                     <div class="dc-card" style="border-left: 5px solid ${inMaint ? 'var(--status-maint)' : 'var(--status-ok)'}">
@@ -511,6 +629,8 @@
                             <div class="dc-info">
                                 <h3>${dc.name}</h3>
                                 <div class="dc-date">${subText}</div>
+                                <div class="dc-window">${windowText}</div>
+                                ${recHtml}
                                 <div class="countdown-container">${countdownHtml}</div>
                             </div>
                         </div>

@@ -13,7 +13,7 @@
             --text-color: #e0e0e0;
             --ring-header-bg: #2d2d2d;
             --status-ok: #28a745;
-            --status-maint: #dc3545; /* Red for maintenance */
+            --status-maint: #dc3545; /* Red for Non-Business Hours */
         }
 
         body {
@@ -268,7 +268,7 @@
     <header>
         <div class="header-title">
             <h1>Deployment Status Dashboard</h1>
-            <p>Live Global DC Timings & Maintenance Windows</p>
+            <p>Live Global DC Timings & Non-Business Hours Windows</p>
         </div>
         <div class="header-controls">
             <select id="view-filter" onchange="filterSelection(this.value)">
@@ -284,8 +284,8 @@
     </header>
 
     <div class="summary-panel">
-        <div class="summary-badge" style="color: var(--status-ok);">Operational: <span id="count-ops">0</span></div>
-        <div class="summary-badge" style="color: var(--status-maint);">Maintenance: <span id="count-maint">0</span></div>
+        <div class="summary-badge" style="color: var(--status-ok);">Business-Hours: <span id="count-ops">0</span></div>
+        <div class="summary-badge" style="color: var(--status-maint);">Non-Business Hours: <span id="count-maint">0</span></div>
     </div>
 
     <div class="dashboard-container">
@@ -380,8 +380,8 @@
             return istDate.getHours();
         }
 
-        function isMaintenance(dc, localHour) {
-            // If no maintenance window defined, assume operational
+        function isNon-Business Hours(dc, localHour) {
+            // If no Non-Business Hours window defined, assume Business-Hours
             if (dc.maintStart === undefined || dc.maintEnd === undefined) return false;
 
             let currentCheckHour = localHour;
@@ -474,12 +474,12 @@
                 const mDeg = ((m / 60) * 360) + ((s/60)*6);
                 const hDeg = ((h / 12) * 360) + ((m/60)*30);
 
-                // 2. Determine Maintenance Status
+                // 2. Determine Non-Business Hours Status
                 // We need the integer hour for logic check
                 // We already have 'h' from above
                 const localHour = h;
                 
-                const inMaint = isMaintenance(dc, localHour);
+                const inMaint = isNon-Business Hours(dc, localHour);
                 
                 // Update Counters
                 if (inMaint) maintCount++; else opsCount++;
@@ -489,7 +489,7 @@
 
                 // 3. Build HTML
                 const statusClass = inMaint ? 'status-maint' : 'status-active';
-                const statusText = inMaint ? 'MAINTENANCE' : 'OPERATIONAL';
+                const statusText = inMaint ? 'Non-Business Hours' : 'Business-Hours';
                 
                 // Special text for US to indicate it's based on IST
                 let subText = dateString;
@@ -551,3 +551,4 @@
     </script>
 </body>
 </html> 
+//--ignore --

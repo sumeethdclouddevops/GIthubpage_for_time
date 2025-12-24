@@ -176,10 +176,11 @@
         /* DC Cards */
         .dc-card {
             width: 220px;
-            height: 220px;
+            min-height: 220px; /* Allow expansion */
+            height: auto;
             background: var(--card-bg);
-            /* Border color is set inline via JS */
-            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px; /* Smooth rounded corners */
             padding: 15px;
             margin-bottom: 15px;
             display: flex;
@@ -193,6 +194,38 @@
         .dc-card:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        /* Product List Styles */
+        .dc-products {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease, opacity 0.5s ease, margin-top 0.5s ease;
+            font-size: 0.8rem;
+            text-align: left;
+            width: 100%;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            margin-top: 0;
+        }
+
+        /* Expand on hover with 5s delay */
+        .dc-card:hover .dc-products {
+            max-height: 200px;
+            opacity: 1;
+            margin-top: 10px;
+            transition-delay: 5s;
+        }
+
+        .dc-products ol {
+            margin: 5px 0 10px 25px;
+            padding: 0;
+        }
+        .dc-products strong {
+            display: block;
+            padding: 8px 10px 0;
+            color: var(--sap-blue);
         }
 
         .dc-left-section {
@@ -654,45 +687,77 @@
                     windowText = `Non-Biz Window: ${s} - ${e}`;
                 }
 
-                const html = `
-                    <div class="dc-card" style="border: 4px solid ${inMaint ? 'var(--status-maint)' : 'var(--status-ok)'}">
-                        <div class="dc-left-section">
-                            <div class="analog-clock">
-                                <div class="clock-marker m-12"></div>
-                                <div class="clock-marker m-3"></div>
-                                <div class="clock-marker m-6"></div>
-                                <div class="clock-marker m-9"></div>
-                                <div class="hand hour" style="transform: rotate(${hDeg}deg)"></div>
-                                <div class="hand min" style="transform: rotate(${mDeg}deg)"></div>
-                                <div class="hand sec" style="transform: rotate(${sDeg}deg)"></div>
-                                <div class="center-dot"></div>
-                            </div>
-                            <div class="dc-info">
-                                <h3>${dc.name}</h3>
-                                <div class="dc-date">${subText}</div>
-                                <div class="dc-window">${windowText}</div>
-                                <div class="countdown-container">${countdownHtml}</div>
-                                <div class="dc-time">${timeString}</div>
-                            </div>
-                            <div class="status-badge ${statusClass}">${statusText}</div>
-                        </div>
-                    </div>
-                `;
+                const borderColor = inMaint ? 'var(--status-maint)' : 'var(--status-ok)';
+                const shadowColor = inMaint ? 'rgba(220, 53, 69, 0.3)' : 'rgba(40, 167, 69, 0.3)';
 
-                // 4. Inject or Update
-                // We use a simple ID approach to update content without flickering
+                // 4. Inject or Update DOM
+                // We refactor this to NOT replace innerHTML every second, so hover state persists
                 const containerId = `dc-${dc.id}`;
                 let el = document.getElementById(containerId);
                 
                 if (!el) {
                     // Create wrapper if doesn't exist
-                    const wrapper = document.createElement('div');
-                    wrapper.id = containerId;
-                    wrapper.innerHTML = html;
-                    document.getElementById(`ring-${dc.ring}-content`).appendChild(wrapper);
-                } else {
-                    el.innerHTML = html;
+                    el = document.createElement('div');
+                    el.id = containerId;
+                    
+                    // Determine Products List
+                    let productsList = [];
+                    if (dc.id === 'us') {
+                        productsList = ['AN', 'Buyer', 'S4'];
+                    } else {
+                        productsList = ['Buyer', 'S4', 'Archesenc'];
+                    }
+                    const productsHtml = productsList.map(p => `<li>${p}</li>`).join('');
+
+                    // Initial HTML Structure
+                    el.innerHTML = `
+                        <div class="dc-card">
+                            <div class="dc-left-section">
+                                <div class="analog-clock">
+                                    <div class="clock-marker m-12"></div>
+                                    <div class="clock-marker m-3"></div>
+                                    <div class="clock-marker m-6"></div>
+                                    <div class="clock-marker m-9"></div>
+                                    <div class="hand hour"></div>
+                                    <div class="hand min"></div>
+                                    <div class="hand sec"></div>
+                                    <div class="center-dot"></div>
+                                </div>
+                                <div class="dc-info">
+                                    <h3>${dc.name}</h3>
+                                    <div class="dc-date"></div>
+                                    <div class="dc-window"></div>
+                                    <div class="countdown-container"></div>
+                                    <div class="dc-time"></div>
+                                </div>
+                                <div class="dc-products">
+                                    <strong>Products:</strong>
+                                    <ol>${productsHtml}</ol>
+                                </div>
+                                <div class="status-badge"></div>
+                            </div>
+                        </div>
+                    `;
+                    document.getElementById(`ring-${dc.ring}-content`).appendChild(el);
                 }
+
+                // Update Dynamic Elements
+                const card = el.querySelector('.dc-card');
+                card.style.borderTop = `6px solid ${borderColor}`;
+                card.style.boxShadow = `0 8px 24px -4px ${shadowColor}`;
+
+                el.querySelector('.hand.hour').style.transform = `rotate(${hDeg}deg)`;
+                el.querySelector('.hand.min').style.transform = `rotate(${mDeg}deg)`;
+                el.querySelector('.hand.sec').style.transform = `rotate(${sDeg}deg)`;
+
+                el.querySelector('.dc-date').innerText = subText;
+                el.querySelector('.dc-window').innerText = windowText;
+                el.querySelector('.countdown-container').innerHTML = countdownHtml;
+                el.querySelector('.dc-time').innerText = timeString;
+                
+                const badge = el.querySelector('.status-badge');
+                badge.className = `status-badge ${statusClass}`;
+                badge.innerText = statusText;
             });
 
             // Update Summary
@@ -725,7 +790,7 @@
                     count++;
                     // Create a simple card for the result
                     const html = `
-                        <div class="dc-card" style="border: 4px solid var(--sap-blue);">
+                        <div class="dc-card" style="border-top: 6px solid var(--sap-blue); box-shadow: 0 8px 24px -4px rgba(137, 207, 240, 0.3);">
                             <div class="dc-info">
                                 <h3>${dc.name}</h3>
                                 <div class="dc-window">Non-Biz Window: ${String(dc.maintStart).padStart(2,'0')}:00 - ${String(dc.maintEnd).padStart(2,'0')}:00</div>

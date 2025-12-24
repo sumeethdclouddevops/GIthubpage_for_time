@@ -18,7 +18,8 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
+            background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+            min-height: 100vh;
             color: var(--text-color);
             margin: 0;
             padding: 20px;
@@ -51,6 +52,32 @@
         .logo-container img {
             height: 50px;
             /* If you don't have an image URL yet, this alt text shows */
+        }
+
+        /* Filter Controls */
+        .filter-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            background-color: #fff;
+            color: var(--sap-blue);
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background-color: var(--sap-blue);
+            color: white;
+            transform: translateY(-2px);
         }
 
         /* Main Grid Layout */
@@ -106,6 +133,46 @@
         .dc-card:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .dc-left-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* Analog Clock Styles */
+        .analog-clock {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #ccc;
+            border-radius: 50%;
+            position: relative;
+            background: #f9f9f9;
+            flex-shrink: 0;
+        }
+
+        .hand {
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            transform-origin: bottom center;
+            border-radius: 2px;
+            z-index: 2;
+        }
+
+        .hand.hour { width: 4px; height: 12px; background: var(--sap-blue); }
+        .hand.min { width: 2px; height: 18px; background: #666; }
+        .hand.sec { width: 1px; height: 20px; background: var(--status-maint); z-index: 3; }
+        
+        .center-dot {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 6px; height: 6px;
+            background: #333;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 4;
         }
 
         .dc-info h3 {
@@ -174,6 +241,12 @@
         </div>
     </header>
 
+    <div class="filter-container">
+        <button class="filter-btn active" onclick="filterSelection('all', this)">Show All</button>
+        <button class="filter-btn" onclick="filterSelection('ring-1', this)">Ring 1</button>
+        <button class="filter-btn" onclick="filterSelection('ring-2', this)">Ring 2</button>
+    </div>
+
     <div class="dashboard-container">
         
         <!-- RING 1 -->
@@ -207,7 +280,15 @@
         const dataCenters = [
             // RING 1
             { id: 'au', name: 'Australia (AUS)', zone: 'Australia/Sydney', ring: 1 },
-            { id: 'in', name: 'India (IN)', zone: 'Asia/Kolkata', ring: 1 },
+            { 
+                id: 'in', 
+                name: 'India (IN)', 
+                zone: 'Asia/Kolkata', 
+                ring: 1,
+                maintStart: 19, // 7 PM IST
+                maintEnd: 7,    // 7 AM IST
+                checkType: 'LOCAL'
+            },
             { id: 'uae', name: 'UAE', zone: 'Asia/Dubai', ring: 1 },
             { id: 'ksa', name: 'Saudi Arabia (KSA)', zone: 'Asia/Riyadh', ring: 1 },
 
@@ -233,6 +314,26 @@
                 checkType: 'IST_BASED' 
             }
         ];
+
+        function filterSelection(selection, btn) {
+            // Update buttons
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const ring1 = document.getElementById('ring-1');
+            const ring2 = document.getElementById('ring-2');
+
+            if (selection === 'all') {
+                ring1.style.display = 'block';
+                ring2.style.display = 'block';
+            } else if (selection === 'ring-1') {
+                ring1.style.display = 'block';
+                ring2.style.display = 'none';
+            } else if (selection === 'ring-2') {
+                ring1.style.display = 'none';
+                ring2.style.display = 'block';
+            }
+        }
 
         function getISTHour() {
             const now = new Date();
@@ -284,10 +385,25 @@
                 const dateOptions = { timeZone: dc.zone, weekday: 'short', month: 'short', day: 'numeric' };
                 const dateString = new Intl.DateTimeFormat('en-US', dateOptions).format(now);
 
+                // Get Time Parts for Analog Clock
+                const parts = new Intl.DateTimeFormat('en-US', {
+                    timeZone: dc.zone,
+                    hour: 'numeric', minute: 'numeric', second: 'numeric',
+                    hour12: false
+                }).formatToParts(now);
+                
+                const h = parseInt(parts.find(p => p.type === 'hour').value);
+                const m = parseInt(parts.find(p => p.type === 'minute').value);
+                const s = parseInt(parts.find(p => p.type === 'second').value);
+
+                const sDeg = ((s / 60) * 360);
+                const mDeg = ((m / 60) * 360) + ((s/60)*6);
+                const hDeg = ((h / 12) * 360) + ((m/60)*30);
+
                 // 2. Determine Maintenance Status
                 // We need the integer hour for logic check
-                const localHourStr = new Intl.DateTimeFormat('en-US', { timeZone: dc.zone, hour: 'numeric', hour12: false }).format(now);
-                const localHour = parseInt(localHourStr);
+                // We already have 'h' from above
+                const localHour = h;
                 
                 const inMaint = isMaintenance(dc, localHour);
 
@@ -301,9 +417,17 @@
 
                 const html = `
                     <div class="dc-card" style="border-left: 5px solid ${inMaint ? 'var(--status-maint)' : 'var(--status-ok)'}">
-                        <div class="dc-info">
-                            <h3>${dc.name}</h3>
-                            <div class="dc-date">${subText}</div>
+                        <div class="dc-left-section">
+                            <div class="analog-clock">
+                                <div class="hand hour" style="transform: rotate(${hDeg}deg)"></div>
+                                <div class="hand min" style="transform: rotate(${mDeg}deg)"></div>
+                                <div class="hand sec" style="transform: rotate(${sDeg}deg)"></div>
+                                <div class="center-dot"></div>
+                            </div>
+                            <div class="dc-info">
+                                <h3>${dc.name}</h3>
+                                <div class="dc-date">${subText}</div>
+                            </div>
                         </div>
                         <div style="text-align:right;">
                             <div class="dc-time">${timeString}</div>

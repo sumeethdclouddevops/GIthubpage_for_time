@@ -67,6 +67,30 @@
             border-radius: 8px;
         }
 
+        .btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+            font-size: 0.9rem;
+        }
+        .btn-primary {
+            background-color: var(--sap-blue);
+            color: #121212;
+        }
+        .btn-primary:hover {
+            background-color: #6bbce0;
+        }
+        .btn-secondary {
+            background-color: #444;
+            color: #fff;
+        }
+        .btn-secondary:hover {
+            background-color: #555;
+        }
+
         /* Dropdown Style */
         #view-filter {
             padding: 10px 15px;
@@ -306,13 +330,14 @@
         </div>
         <div class="header-controls">
             <div class="planner-controls">
-                <select id="product-select" class="planner-select" onchange="updateDashboard()">
+                <select id="product-select" class="planner-select">
                     <option value="0">Select Product...</option>
                     <option value="2.5">AN (2.5 hrs)</option>
                     <option value="2">Buyer (2 hrs)</option>
                     <option value="2">S4 (2 hrs)</option>
                 </select>
-                <input type="time" id="deploy-time" class="planner-time" onchange="updateDashboard()">
+                <input type="time" id="deploy-time" class="planner-time">
+                <button class="btn btn-primary" onclick="showPlannerResults()">Check Availability</button>
             </div>
 
             <select id="view-filter" onchange="filterSelection(this.value)">
@@ -327,6 +352,7 @@
         </div>
     </header>
 
+    <div id="main-view">
     <div class="summary-panel">
         <div class="summary-badge" style="color: var(--status-ok);">Business Hours: <span id="count-business-hours">0</span></div>
         <div class="summary-badge" style="color: var(--status-maint);">Non-Business Hours: <span id="count-non-business">0</span></div>
@@ -352,6 +378,15 @@
             <div id="ring-2-content"></div>
         </div>
 
+    </div>
+    </div>
+
+    <div id="planner-view" style="display: none;">
+        <div style="margin-bottom: 20px;">
+            <button class="btn btn-secondary" onclick="goHome()">Home</button>
+        </div>
+        <h2 style="color: var(--sap-blue); border-bottom: 1px solid #444; padding-bottom: 10px;">Recommended Deployment Windows</h2>
+        <div id="planner-results" class="dashboard-container"></div>
     </div>
 
     <footer>
@@ -483,11 +518,8 @@
             return `<span class="countdown-label">${label}</span>${hh}:${mm}:${ss}`;
         }
 
-        function checkRecommendation(dc) {
-            const productDuration = parseFloat(document.getElementById('product-select').value);
-            const timeInput = document.getElementById('deploy-time').value;
-
-            if (!productDuration || !timeInput || dc.maintStart === undefined) return "";
+        function isTimeSlotAvailable(dc, productDuration, timeInput) {
+            if (!productDuration || !timeInput || dc.maintStart === undefined) return false;
 
             // Parse selected time (User Local)
             const [selH, selM] = timeInput.split(':').map(Number);
@@ -543,7 +575,7 @@
                 if (sIn && productDuration <= timeUntilClose) fits = true;
             }
 
-            return fits ? `<div class="recommendation-badge">✅ Recommended</div>` : "";
+            return fits;
         }
 
         function updateDashboard() {
@@ -610,9 +642,6 @@
                     windowText = `Non-Biz Window: ${s} - ${e}`;
                 }
 
-                // Recommendation
-                const recHtml = checkRecommendation(dc);
-
                 const html = `
                     <div class="dc-card" style="border-left: 5px solid ${inMaint ? 'var(--status-maint)' : 'var(--status-ok)'}">
                         <div class="dc-left-section">
@@ -630,7 +659,6 @@
                                 <h3>${dc.name}</h3>
                                 <div class="dc-date">${subText}</div>
                                 <div class="dc-window">${windowText}</div>
-                                ${recHtml}
                                 <div class="countdown-container">${countdownHtml}</div>
                             </div>
                         </div>
@@ -660,6 +688,54 @@
             // Update Summary
             document.getElementById('count-business-hours').innerText = businessHoursCount;
             document.getElementById('count-non-business').innerText = nonBusinessCount;
+        }
+
+        function showPlannerResults() {
+            const productSelect = document.getElementById('product-select');
+            const timeInput = document.getElementById('deploy-time');
+            const duration = parseFloat(productSelect.value);
+            const timeVal = timeInput.value;
+
+            if (!duration || !timeVal) {
+                alert("Please select a product and a time.");
+                return;
+            }
+
+            // Switch Views
+            document.getElementById('main-view').style.display = 'none';
+            document.getElementById('planner-view').style.display = 'block';
+            document.getElementById('view-filter').style.display = 'none';
+
+            const container = document.getElementById('planner-results');
+            container.innerHTML = '';
+            let count = 0;
+
+            dataCenters.forEach(dc => {
+                if (isTimeSlotAvailable(dc, duration, timeVal)) {
+                    count++;
+                    // Create a simple card for the result
+                    const html = `
+                        <div class="dc-card" style="border-left: 5px solid var(--sap-blue);">
+                            <div class="dc-info">
+                                <h3>${dc.name}</h3>
+                                <div class="dc-window">Non-Biz Window: ${String(dc.maintStart).padStart(2,'0')}:00 - ${String(dc.maintEnd).padStart(2,'0')}:00</div>
+                                <div class="recommendation-badge" style="margin-top:10px;">✅ Recommended</div>
+                            </div>
+                        </div>
+                    `;
+                    container.innerHTML += html;
+                }
+            });
+
+            if (count === 0) {
+                container.innerHTML = '<p style="color: #aaa;">No Data Centers found matching the criteria.</p>';
+            }
+        }
+
+        function goHome() {
+            document.getElementById('main-view').style.display = 'block';
+            document.getElementById('planner-view').style.display = 'none';
+            document.getElementById('view-filter').style.display = 'block';
         }
 
         // Initial Run

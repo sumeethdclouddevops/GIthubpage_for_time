@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deployment Command Center</title>
+    <style>
+        :root {
+            --sap-blue: #003366;
+            --sap-gold: #F0AB00;
+            --bg-color: #f4f6f8;
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --ring-header-bg: #eef2f5;
+            --status-ok: #28a745;
+            --status-maint: #dc3545; /* Red for maintenance */
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* Header & Logo */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--card-bg);
+            padding: 15px 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+
+        .header-title h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--sap-blue);
+        }
+
+        .header-title p {
+            margin: 5px 0 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .logo-container img {
+            height: 50px;
+            /* If you don't have an image URL yet, this alt text shows */
+        }
+
+        /* Main Grid Layout */
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Ring Columns */
+        .ring-column {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .ring-header {
+            border-bottom: 2px solid var(--sap-gold);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ring-header h2 {
+            margin: 0;
+            color: var(--sap-blue);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* DC Cards */
+        .dc-card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .dc-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .dc-info h3 {
+            margin: 0 0 5px 0;
+            font-size: 1.2rem;
+        }
+
+        .dc-time {
+            font-size: 1.4rem;
+            font-weight: bold;
+            font-variant-numeric: tabular-nums;
+            color: #444;
+        }
+
+        .dc-date {
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        /* Status Indicators */
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: white;
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .status-active {
+            background-color: var(--status-ok);
+        }
+
+        .status-maint {
+            background-color: var(--status-maint);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #888;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-title">
+            <h1>Deployment Status Dashboard</h1>
+            <p>Live Global DC Timings & Maintenance Windows</p>
+        </div>
+        <div class="logo-container">
+            <!-- Replace src with your actual hosted logo path if needed -->
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/SAP_2011_logo.svg/2560px-SAP_2011_logo.svg.png" alt="SAP Ariba Logo">
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        
+        <!-- RING 1 -->
+        <div class="ring-column" id="ring-1">
+            <div class="ring-header">
+                <h2>Ring 1</h2>
+                <small>AU, IN, UAE, KSA</small>
+            </div>
+            <div id="ring-1-content"></div>
+        </div>
+
+        <!-- RING 2 -->
+        <div class="ring-column" id="ring-2">
+            <div class="ring-header">
+                <h2>Ring 2</h2>
+                <small>JP, CN, EU, US</small>
+            </div>
+            <div id="ring-2-content"></div>
+        </div>
+
+    </div>
+
+    <footer>
+        Generated for Deployment Team | Times are calculated live based on browser clock.
+    </footer>
+
+    <script>
+        // Configuration for Data Centers
+        // 'maintStart' and 'maintEnd' are hours (0-23).
+        // 'checkType' determines if we check against Local time or IST.
+        const dataCenters = [
+            // RING 1
+            { id: 'au', name: 'Australia (AUS)', zone: 'Australia/Sydney', ring: 1 },
+            { id: 'in', name: 'India (IN)', zone: 'Asia/Kolkata', ring: 1 },
+            { id: 'uae', name: 'UAE', zone: 'Asia/Dubai', ring: 1 },
+            { id: 'ksa', name: 'Saudi Arabia (KSA)', zone: 'Asia/Riyadh', ring: 1 },
+
+            // RING 2
+            { 
+                id: 'jp', 
+                name: 'Japan (JP)', 
+                zone: 'Asia/Tokyo', 
+                ring: 2, 
+                maintStart: 22, // 10 PM Local
+                maintEnd: 6,    // 6 AM Local
+                checkType: 'LOCAL' 
+            },
+            { id: 'cn', name: 'China (CN)', zone: 'Asia/Shanghai', ring: 2 },
+            { id: 'eu', name: 'Europe (EU)', zone: 'Europe/Berlin', ring: 2 }, // Using Berlin as Central EU
+            { 
+                id: 'us', 
+                name: 'United States (US)', 
+                zone: 'America/New_York', 
+                ring: 2,
+                maintStart: 7,  // 7 AM IST
+                maintEnd: 16,   // 4 PM IST
+                checkType: 'IST_BASED' 
+            }
+        ];
+
+        function getISTHour() {
+            const now = new Date();
+            // Convert current time to IST string, then parse the hour
+            const istString = now.toLocaleString("en-US", {timeZone: "Asia/Kolkata"});
+            const istDate = new Date(istString);
+            return istDate.getHours();
+        }
+
+        function isMaintenance(dc, localHour) {
+            // If no maintenance window defined, assume operational
+            if (dc.maintStart === undefined || dc.maintEnd === undefined) return false;
+
+            let currentCheckHour = localHour;
+
+            // Special Logic for US: Check against IST time, not local US time
+            if (dc.checkType === 'IST_BASED') {
+                currentCheckHour = getISTHour();
+            }
+
+            const start = dc.maintStart;
+            const end = dc.maintEnd;
+
+            // Logic for windows that cross midnight (e.g., 22:00 to 06:00)
+            if (start > end) {
+                return currentCheckHour >= start || currentCheckHour < end;
+            } 
+            // Logic for standard windows (e.g., 07:00 to 16:00)
+            else {
+                return currentCheckHour >= start && currentCheckHour < end;
+            }
+        }
+
+        function updateDashboard() {
+            const now = new Date();
+
+            dataCenters.forEach(dc => {
+                // 1. Get Time in Target Zone
+                const options = { 
+                    timeZone: dc.zone, 
+                    hour: '2-digit', 
+                    minute: '2-digit', 
+                    second: '2-digit', 
+                    hour12: false 
+                };
+                const timeString = new Intl.DateTimeFormat('en-US', options).format(now);
+                
+                // Get Date in Target Zone
+                const dateOptions = { timeZone: dc.zone, weekday: 'short', month: 'short', day: 'numeric' };
+                const dateString = new Intl.DateTimeFormat('en-US', dateOptions).format(now);
+
+                // 2. Determine Maintenance Status
+                // We need the integer hour for logic check
+                const localHourStr = new Intl.DateTimeFormat('en-US', { timeZone: dc.zone, hour: 'numeric', hour12: false }).format(now);
+                const localHour = parseInt(localHourStr);
+                
+                const inMaint = isMaintenance(dc, localHour);
+
+                // 3. Build HTML
+                const statusClass = inMaint ? 'status-maint' : 'status-active';
+                const statusText = inMaint ? 'MAINTENANCE' : 'OPERATIONAL';
+                
+                // Special text for US to indicate it's based on IST
+                let subText = dateString;
+                if(dc.id === 'us' && inMaint) subText += " (IST Window)";
+
+                const html = `
+                    <div class="dc-card" style="border-left: 5px solid ${inMaint ? 'var(--status-maint)' : 'var(--status-ok)'}">
+                        <div class="dc-info">
+                            <h3>${dc.name}</h3>
+                            <div class="dc-date">${subText}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div class="dc-time">${timeString}</div>
+                            <div class="status-badge ${statusClass}">${statusText}</div>
+                        </div>
+                    </div>
+                `;
+
+                // 4. Inject or Update
+                // We use a simple ID approach to update content without flickering
+                const containerId = `dc-${dc.id}`;
+                let el = document.getElementById(containerId);
+                
+                if (!el) {
+                    // Create wrapper if doesn't exist
+                    const wrapper = document.createElement('div');
+                    wrapper.id = containerId;
+                    wrapper.innerHTML = html;
+                    document.getElementById(`ring-${dc.ring}-content`).appendChild(wrapper);
+                } else {
+                    el.innerHTML = html;
+                }
+            });
+        }
+
+        // Initial Run
+        updateDashboard();
+        
+        // Update every second
+        setInterval(updateDashboard, 1000);
+
+    </script>
+</body>
+</html>

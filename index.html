@@ -12,8 +12,8 @@
             --card-bg: rgba(30, 30, 30, 0.7); /* Glassmorphism base */
             --text-color: #e0e0e0;
             --ring-header-bg: #2d2d2d; 
-            --status-ok: #28a745;
-            --status-maint: #dc3545; /* Red for Non-Business Hours */
+            --status-ok: #dc3545; /* Red for Business Hours */
+            --status-maint: #28a745; /* Green for Non-Business Hours */
         }
 
         body {
@@ -478,8 +478,8 @@
                 name: 'United States (US)', 
                 zone: 'America/New_York', 
                 ring: 2,
-                maintStart: 7,  // 7 AM IST
-                maintEnd: 16,   // 4 PM IST
+                maintStart: 5,  // 5 AM IST (start of non-business hours)
+                maintEnd: 21,   // 9 PM IST (end of non-business hours)
                 checkType: 'IST_BASED' 
             }
         ];

@@ -403,8 +403,8 @@
 
     <div id="main-view">
     <div class="summary-panel">
-        <div class="summary-badge" style="color: var(--status-ok);">Business Hours: <span id="count-business-hours">0</span></div>
-        <div class="summary-badge" style="color: var(--status-maint);">Non-Business Hours: <span id="count-non-business">0</span></div>
+        <div class="summary-badge" style="color: var(--status-ok); cursor: pointer;" onclick="filterByStatus('business')" id="badge-business">Business Hours: <span id="count-business-hours">0</span></div>
+        <div class="summary-badge" style="color: var(--status-maint); cursor: pointer;" onclick="filterByStatus('non-business')" id="badge-non-business">Non-Business Hours: <span id="count-non-business">0</span></div>
     </div>
 
     <div class="dashboard-container">
@@ -443,6 +443,9 @@
     </footer>
 
     <script>
+        // Filter state for status filtering
+        let currentStatusFilter = 'all'; // 'all', 'business', or 'non-business'
+        
         // Configuration for Data Centers
         // 'maintStart' and 'maintEnd' are hours (0-23).
         // 'checkType' determines if we check against Local time or IST.
@@ -498,6 +501,49 @@
                 ring1.style.display = 'none';
                 ring2.style.display = 'block';
             }
+        }
+
+        function filterByStatus(status) {
+            currentStatusFilter = status;
+            // Update badge styling
+            const badgeBusiness = document.getElementById('badge-business');
+            const badgeNonBusiness = document.getElementById('badge-non-business');
+            
+            badgeBusiness.style.borderBottom = status === 'business' ? '3px solid var(--status-ok)' : 'none';
+            badgeNonBusiness.style.borderBottom = status === 'non-business' ? '3px solid var(--status-maint)' : 'none';
+            
+            // Apply filter to cards
+            applyStatusFilter();
+        }
+
+        function applyStatusFilter() {
+            dataCenters.forEach(dc => {
+                const containerId = `dc-${dc.id}`;
+                const el = document.getElementById(containerId);
+                
+                if (!el) return;
+
+                // Get current status
+                const now = new Date();
+                const parts = new Intl.DateTimeFormat('en-US', {
+                    timeZone: dc.zone,
+                    hour: 'numeric', minute: 'numeric', second: 'numeric',
+                    hour12: false
+                }).formatToParts(now);
+                
+                const h = parseInt(parts.find(p => p.type === 'hour').value);
+                const inMaint = isNonBusinessHours(dc, h);
+                
+                // Show/hide based on filter
+                let shouldShow = true;
+                if (currentStatusFilter === 'business' && inMaint) {
+                    shouldShow = false;
+                } else if (currentStatusFilter === 'non-business' && !inMaint) {
+                    shouldShow = false;
+                }
+                
+                el.style.display = shouldShow ? 'block' : 'none';
+            });
         }
 
         function getISTHour() {
@@ -824,6 +870,17 @@
             document.getElementById('main-view').style.display = 'block';
             document.getElementById('planner-view').style.display = 'none';
             document.getElementById('view-filter').style.display = 'block';
+            
+            // Reset filters
+            currentStatusFilter = 'all';
+            document.getElementById('badge-business').style.borderBottom = 'none';
+            document.getElementById('badge-non-business').style.borderBottom = 'none';
+            
+            // Show all cards
+            dataCenters.forEach(dc => {
+                const el = document.getElementById(`dc-${dc.id}`);
+                if (el) el.style.display = 'block';
+            });
         }
 
         // Initial Run

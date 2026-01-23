@@ -210,12 +210,16 @@
             margin-top: 0;
         }
 
-        /* Expand on hover with 5s delay */
-        .dc-card:hover .dc-products {
+        /* Expand on click */
+        .dc-products.expanded {
             max-height: 200px;
             opacity: 1;
             margin-top: 10px;
-            transition-delay: 5s;
+        }
+
+        /* Add cursor pointer to card for click feedback */
+        .dc-card {
+            cursor: pointer;
         }
 
         .dc-products ol {
@@ -739,6 +743,15 @@
                         </div>
                     `;
                     document.getElementById(`ring-${dc.ring}-content`).appendChild(el);
+
+                    // Add click handler to toggle products
+                    const card = el.querySelector('.dc-card');
+                    const productsDiv = el.querySelector('.dc-products');
+                    card.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        // Toggle expanded class
+                        productsDiv.classList.toggle('expanded');
+                    });
                 }
 
                 // Update Dynamic Elements

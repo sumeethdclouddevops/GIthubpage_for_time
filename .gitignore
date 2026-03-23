@@ -1,0 +1,11 @@
+# Git ignore file
+.DS_Store
+.vscode/
+*.log
+*.bak
+node_modules/
+.env
+.idea/
+*.swp
+*.swo
+*~

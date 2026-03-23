@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Handover Shift Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .form-section {
+            margin-bottom: 35px;
+        }
+
+        .form-section h2 {
+            color: #333;
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 0.95rem;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="date"],
+        input[type="time"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="date"]:focus,
+        input[type="time"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .shift-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-left: 4px solid #667eea;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .shift-info p {
+            color: #555;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .shift-info strong {
+            color: #667eea;
+        }
+
+        .shift-options {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .shift-radio {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .shift-radio input[type="radio"] {
+            margin-right: 8px;
+            cursor: pointer;
+        }
+
+        .shift-radio:hover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .shift-radio input[type="radio"]:checked + label {
+            color: #667eea;
+            font-weight: 700;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 40px;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-generate {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-generate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-reset {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-reset:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-copy {
+            background: #28a745;
+            color: white;
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .btn-copy:hover {
+            background: #218838;
+        }
+
+        .output-section {
+            display: none;
+            margin-top: 40px;
+            padding-top: 40px;
+            border-top: 2px solid #ddd;
+        }
+
+        .output-section.active {
+            display: block;
+        }
+
+        .handover-card {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 8px;
+            border-left: 5px solid #667eea;
+        }
+
+        .handover-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .handover-field {
+            margin-bottom: 15px;
+        }
+
+        .handover-field strong {
+            color: #333;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .handover-field p {
+            color: #555;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin: 0;
+        }
+
+        .copy-notification {
+            display: none;
+            background: #28a745;
+            color: white;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .copy-notification.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+
+            header h1 {
+                font-size: 1.5rem;
+            }
+
+            .content {
+                padding: 25px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔄 Handover Shift Generator</h1>
+            <p>Efficiently document and hand over shifts between agents</p>
+        </header>
+
+        <div class="content">
+            <form id="handoverForm">
+                <!-- Current Agent Section -->
+                <div class="form-section">
+                    <h2>Current Shift Agent</h2>
+                    <div class="form-group">
+                        <label for="agentSelect">Select Agent *</label>
+                        <select id="agentSelect" required>
+                            <option value="">-- Choose Agent --</option>
+                            <option value="Agent1">Agent 1</option>
+                            <option value="Agent2">Agent 2</option>
+                            <option value="Agent3">Agent 3</option>
+                            <option value="Agent4">Agent 4</option>
+                            <option value="Agent5">Agent 5</option>
+                            <option value="Agent6">Agent 6</option>
+                            <option value="Agent7">Agent 7</option>
+                            <option value="Agent8">Agent 8</option>
+                            <option value="Agent9">Agent 9</option>
+                            <option value="Agent10">Agent 10</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Shift Details Section -->
+                <div class="form-section">
+                    <h2>Shift Details</h2>
+                    <div class="form-group">
+                        <label>Select Shift *</label>
+                        <div class="shift-options">
+                            <div class="shift-radio">
+                                <input type="radio" id="shift1" name="shift" value="Shift 1: 5:30 AM - 3:00 PM IST" required>
+                                <label for="shift1"><strong>Shift 1:</strong> 5:30 AM - 3:00 PM IST</label>
+                            </div>
+                            <div class="shift-radio">
+                                <input type="radio" id="shift2" name="shift" value="Shift 2: 2:30 PM - 11:00 PM IST">
+                                <label for="shift2"><strong>Shift 2:</strong> 2:30 PM - 11:00 PM IST</label>
+                            </div>
+                            <div class="shift-radio">
+                                <input type="radio" id="shift3" name="shift" value="Shift 3: 9:00 PM - 5:50 PM PST">
+                                <label for="shift3"><strong>Shift 3:</strong> 9:00 PM - 5:50 PM PST</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label for="shiftDate">Shift Date *</label>
+                            <input type="date" id="shiftDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="nextAgent">Next Agent for Handover *</label>
+                            <select id="nextAgent" required>
+                                <option value="">-- Choose Agent --</option>
+                                <option value="Agent1">Agent 1</option>
+                                <option value="Agent2">Agent 2</option>
+                                <option value="Agent3">Agent 3</option>
+                                <option value="Agent4">Agent 4</option>
+                                <option value="Agent5">Agent 5</option>
+                                <option value="Agent6">Agent 6</option>
+                                <option value="Agent7">Agent 7</option>
+                                <option value="Agent8">Agent 8</option>
+                                <option value="Agent9">Agent 9</option>
+                                <option value="Agent10">Agent 10</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tasks Received Section -->
+                <div class="form-section">
+                    <h2>Tasks from Previous Agent</h2>
+                    <div class="form-group">
+                        <label for="tasksReceived">What tasks did you receive from the previous agent? *</label>
+                        <textarea id="tasksReceived" placeholder="List all tasks received at the start of your shift..." required></textarea>
+                    </div>
+                </div>
+
+                <!-- Tasks Completed Section -->
+                <div class="form-section">
+                    <h2>Tasks Completed During Shift</h2>
+                    <div class="form-group">
+                        <label for="tasksCompleted">What tasks did you complete? *</label>
+                        <textarea id="tasksCompleted" placeholder="List all tasks completed during your shift..." required></textarea>
+                    </div>
+                </div>
+
+                <!-- Pending Handover Section -->
+                <div class="form-section">
+                    <h2>Pending Tasks & Handover Items</h2>
+                    <div class="form-group">
+                        <label for="tasksPending">What tasks need to be handed over to the next agent? *</label>
+                        <textarea id="tasksPending" placeholder="List all pending tasks, in-progress work, and items needing attention..." required></textarea>
+                    </div>
+                </div>
+
+                <!-- Ticket Details Section -->
+                <div class="form-section">
+                    <h2>Ticket Details & Descriptions</h2>
+                    <div class="form-group">
+                        <label for="ticketDetails">Ticket IDs and Details *</label>
+                        <textarea id="ticketDetails" placeholder="List ticket numbers and their current status/description...
+Example:
+TICKET-001: Customer complaint - In Progress
+TICKET-002: Feature request - On Hold - Waiting for client feedback" required></textarea>
+                    </div>
+                </div>
+
+                <!-- Special Notes Section -->
+                <div class="form-section">
+                    <h2>Special Notes & Important Information</h2>
+                    <div class="form-group">
+                        <label for="specialNotes">Any special notes or important details for the next agent?</label>
+                        <textarea id="specialNotes" placeholder="Add any important notes, blockers, urgent matters, or special instructions..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Buttons -->
+                <div class="button-group">
+                    <button type="submit" class="btn-generate">📋 Generate Handover</button>
+                    <button type="reset" class="btn-reset">🔄 Clear Form</button>
+                </div>
+            </form>
+
+            <!-- Output Section -->
+            <div class="output-section" id="outputSection">
+                <h2>📄 Handover Document</h2>
+                <div class="handover-card" id="handoverOutput"></div>
+                <button class="btn-copy" onclick="copyToClipboard()">📋 Copy to Clipboard</button>
+                <div class="copy-notification" id="copyNotification">✓ Copied to clipboard!</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set today's date as default
+        document.getElementById('shiftDate').valueAsDate = new Date();
+
+        // Form submission
+        document.getElementById('handoverForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            generateHandover();
+        });
+
+        function generateHandover() {
+            const formData = {
+                currentAgent: document.getElementById('agentSelect').value,
+                shift: document.querySelector('input[name="shift"]:checked').value,
+                shiftDate: document.getElementById('shiftDate').value,
+                nextAgent: document.getElementById('nextAgent').value,
+                tasksReceived: document.getElementById('tasksReceived').value,
+                tasksCompleted: document.getElementById('tasksCompleted').value,
+                tasksPending: document.getElementById('tasksPending').value,
+                ticketDetails: document.getElementById('ticketDetails').value,
+                specialNotes: document.getElementById('specialNotes').value
+            };
+
+            const handoverHTML = `
+                <div class="handover-field">
+                    <strong>📅 Date:</strong>
+                    <p>${new Date(formData.shiftDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                </div>
+
+                <div class="handover-field">
+                    <strong>👤 Current Agent:</strong>
+                    <p>${formData.currentAgent}</p>
+                </div>
+
+                <div class="handover-field">
+                    <strong>⏰ Shift:</strong>
+                    <p>${formData.shift}</p>
+                </div>
+
+                <div class="handover-field">
+                    <strong>➡️ Handing Over To:</strong>
+                    <p>${formData.nextAgent}</p>
+                </div>
+
+                <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+
+                <h3>📥 Tasks Received from Previous Agent</h3>
+                <div class="handover-field">
+                    <p>${formData.tasksReceived}</p>
+                </div>
+
+                <h3>✅ Tasks Completed</h3>
+                <div class="handover-field">
+                    <p>${formData.tasksCompleted}</p>
+                </div>
+
+                <h3>📤 Pending Tasks for Next Agent</h3>
+                <div class="handover-field">
+                    <p>${formData.tasksPending}</p>
+                </div>
+
+                <h3>🎫 Ticket Details</h3>
+                <div class="handover-field">
+                    <p>${formData.ticketDetails}</p>
+                </div>
+
+                <h3>⭐ Special Notes</h3>
+                <div class="handover-field">
+                    <p>${formData.specialNotes || '(No special notes)'}</p>
+                </div>
+            `;
+
+            document.getElementById('handoverOutput').innerHTML = handoverHTML;
+            document.getElementById('outputSection').classList.add('active');
+
+            // Scroll to output
+            document.getElementById('outputSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function copyToClipboard() {
+            const text = document.getElementById('handoverOutput').innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                const notification = document.getElementById('copyNotification');
+                notification.classList.add('show');
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+            });
+        }
+    </script>
+</body>
+</html>
